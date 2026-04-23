@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buzzled Master Solver</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #1a1a3e, #24243e);
+    color: #e0e0e0; min-height: 100vh; padding: 20px;
+  }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 4px;
+       background: linear-gradient(90deg, #f5c518, #ffdd57); -webkit-background-clip: text;
+       -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Pin input tables */
+  .section { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;
+             margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.08); }
+  .section h2 { font-size: 16px; margin-bottom: 4px; color: #f5c518; }
+  .section p { font-size: 12px; color: #888; margin-bottom: 12px; }
+  .pin-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .pin-card { background: rgba(255,255,255,0.06); border-radius: 8px; padding: 8px;
+              text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+  .pin-card label { font-size: 11px; color: #aaa; display: block; margin-bottom: 4px; font-weight: 600; }
+  .pin-card .hexcount { font-size: 10px; color: #666; margin-bottom: 6px; }
+  .pin-card select, .pin-card input {
+    width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #444;
+    background: #1a1a2e; color: #eee; font-size: 13px; text-align: center; }
+  select.yellow { background: #f5c518; color: #000; font-weight: bold; }
+  select.black { background: #333; color: #fff; font-weight: bold; }
+
+  /* Buttons */
+  .btn-row { text-align: center; margin: 20px 0; }
+  button { background: linear-gradient(135deg, #f5c518, #e0b000); color: #000; border: none;
+           padding: 14px 36px; font-size: 17px; font-weight: 800; border-radius: 10px;
+           cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+  button:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(245,197,24,0.4); }
+  button:active { transform: scale(0.98); }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: #ccc; font-size: 13px;
+                   padding: 8px 18px; font-weight: 600; margin-left: 10px; }
+  .btn-secondary:hover { background: rgba(255,255,255,0.2); box-shadow: none; }
+
+  /* Solution */
+  #status { text-align: center; font-size: 20px; font-weight: 700; margin: 16px 0; }
+  .solved { color: #4caf50; }
+  .failed { color: #f44336; }
+  #solution { text-align: center; margin: 20px auto; }
+  .grid-row { margin: 5px 0; line-height: 1; }
+  .hex-cell { display: inline-block; width: 40px; height: 40px; line-height: 40px;
+              text-align: center; border-radius: 50%; margin: 2px; font-size: 14px;
+              font-weight: 700; }
+  .hex-Y { background: #f5c518; color: #000; }
+  .hex-B { background: #2a2a3a; color: #aaa; border: 2px solid #444; }
+  .row-label { font-size: 11px; color: #666; margin-left: 8px; }
+
+  /* Instructions */
+  .help { background: rgba(245,197,24,0.08); border: 1px solid rgba(245,197,24,0.2);
+          border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+  .help h3 { color: #f5c518; font-size: 14px; margin-bottom: 8px; }
+  .help p, .help li { font-size: 13px; color: #bbb; line-height: 1.6; }
+  .help ol { padding-left: 20px; }
+  .help img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+  details summary { cursor: pointer; color: #f5c518; font-weight: 600; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🐝 Buzzled Master Solver</h1>
+  <p class="subtitle">Enter the 21 pins from today's puzzle, then click Solve</p>
+
+  <details class="help">
+    <summary>📖 How to use this solver (click to expand)</summary>
+    <ol>
+      <li>Open <a href="https://puzzmallow.com/buzzled" target="_blank" style="color:#f5c518">Buzzled</a> and select <b>Master</b> mode.</li>
+      <li>Look at the <b>21 pins</b> around the hex grid. Each pin has a <b>color</b> (yellow/black) and a <b>number</b>.</li>
+      <li>The pins are grouped into 3 directions:
+        <ul>
+          <li><b>Top pins (7)</b> — the pins along the top edge, from upper-left corner to upper-right corner</li>
+          <li><b>Right + Bottom-right pins (7)</b> — going down the right side, then along the bottom-right edge</li>
+          <li><b>Left + Bottom-left pins (7)</b> — going up the left side, then along the bottom-left edge (entered right-to-left)</li>
+        </ul>
+      </li>
+      <li>For each pin, set its <b>color</b> (Yellow/Black) and <b>number</b> in the inputs below.</li>
+      <li>Click <b>Solve</b>. The solution grid shows each hex as Yellow (🟡) or Black (⚫), row by row from top to bottom.</li>
+    </ol>
+  </details>
+
+  <div class="section">
+    <h2>↓ Top Pins (left → right along top edge)</h2>
+    <p>7 pins from upper-left corner to upper-right corner. These constrain diagonal columns going downward.</p>
+    <div class="pin-grid" id="pins-q"></div>
+  </div>
+
+  <div class="section">
+    <h2>← Right + Bottom-Right Pins (top → bottom)</h2>
+    <p>4 pins down the right edge, then 3 pins along bottom-right edge toward center. These constrain horizontal rows.</p>
+    <div class="pin-grid" id="pins-r"></div>
+  </div>
+
+  <div class="section">
+    <h2>→ Left + Bottom-Left Pins (top → bottom on left, then right along bottom-left)</h2>
+    <p>4 pins down the left edge (entered bottom to top), then 3 along bottom-left toward center. These constrain the other diagonal.</p>
+    <div class="pin-grid" id="pins-s"></div>
+  </div>
+
+  <div class="btn-row">
+    <button onclick="solvePuzzle()">🔍 Solve Puzzle</button>
+    <button class="btn-secondary" onclick="loadExample()">Load Example (#378)</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="solution"></div>
+</div>
+
+<script>
+// ─── GRID ENGINE ──────────────────────────────────────────
+const R=3, hexes=[], idx={};
+for(let q=-R;q<=R;q++)for(let r=-R;r<=R;r++){
+  let s=-q-r;if(Math.abs(s)<=R){hexes.push([q,r,s]);idx[q+','+r+','+s]=hexes.length-1;}}
+hexes.sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
+const N=hexes.length;
+function rowsBy(ci){let d={};hexes.forEach(h=>{let k=h[ci];(d[k]=d[k]||[]).push(h)});return d;}
+const rR=rowsBy(1), rQ=rowsBy(0), rS=rowsBy(2);
+
+// ─── PIN ORDERING ─────────────────────────────────────────
+// Top pins: q = -3, -2, -1, 0, 1, 2, 3
+// Right+BR pins: r = -3, -2, -1, 0, 1, 2, 3
+// Left+BL pins: s = 3, 2, 1, 0, -1, -2, -3  (top of left edge to bottom-left to bottom)
+const pinDefs = {
+  q: [-3,-2,-1,0,1,2,3].map(v => ({dir:'q', val:v, len:rQ[v].length,
+      label: v===-3?'Far left':v===3?'Far right':v===0?'Center':'Pin '+(v+4)})),
+  r: [-3,-2,-1,0,1,2,3].map(v => ({dir:'r', val:v, len:rR[v].length,
+      label: v<=-1?'Right #'+(v+4):v===0?'Right #4':'Bot-R #'+(v+4)})),
+  s: [3,2,1,0,-1,-2,-3].map(v => ({dir:'s', val:v, len:rS[v].length,
+      label: v>=1?'Left #'+(4-v):v===0?'Left #4':'Bot-L #'+(4-v)}))
+};
+
+// ─── BUILD PIN INPUT UI ───────────────────────────────────
+function buildPinInputs(containerId, pins) {
+  const el = document.getElementById(containerId);
+  pins.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'pin-card';
+    card.innerHTML = `
+      <label>${p.label}</label>
+      <div class="hexcount">${p.len} hexes</div>
+      <select id="color-${p.dir}-${i}" onchange="styleSelect(this)">
+        <option value="Y">Yellow</option><option value="B">Black</option>
+      </select>
+      <input type="number" id="count-${p.dir}-${i}" value="2" min="0" max="${p.len}" style="margin-top:4px">
+    `;
+    el.appendChild(card);
+  });
+}
+function styleSelect(sel) {
+  sel.className = sel.value === 'Y' ? 'yellow' : 'black';
+}
+buildPinInputs('pins-q', pinDefs.q);
+buildPinInputs('pins-r', pinDefs.r);
+buildPinInputs('pins-s', pinDefs.s);
+document.querySelectorAll('select').forEach(styleSelect);
+
+// ─── LOAD EXAMPLE (TODAY #378) ────────────────────────────
+function loadExample() {
+  const data = {
+    q: [{c:'Y',n:3},{c:'B',n:2},{c:'Y',n:1},{c:'Y',n:2},{c:'B',n:3},{c:'Y',n:1},{c:'Y',n:3}],
+    r: [{c:'B',n:3},{c:'Y',n:2},{c:'Y',n:3},{c:'B',n:4},{c:'B',n:4},{c:'B',n:2},{c:'B',n:2}],
+    s: [{c:'B',n:2},{c:'B',n:3},{c:'B',n:4},{c:'Y',n:2},{c:'Y',n:4},{c:'Y',n:2},{c:'B',n:2}]
+  };
+  ['q','r','s'].forEach(dir => {
+    data[dir].forEach((d, i) => {
+      const sel = document.getElementById(`color-${dir}-${i}`);
+      const inp = document.getElementById(`count-${dir}-${i}`);
+      sel.value = d.c; inp.value = d.n; styleSelect(sel);
+    });
+  });
+}
+
+// ─── READ CONSTRAINTS FROM UI ─────────────────────────────
+function readConstraints() {
+  const C = [];
+  const rowSets = {q: rQ, r: rR, s: rS};
+  ['q','r','s'].forEach(dir => {
+    const vals = dir==='s' ? [3,2,1,0,-1,-2,-3] : [-3,-2,-1,0,1,2,3];
+    vals.forEach((v, i) => {
+      const col = document.getElementById(`color-${dir}-${i}`).value === 'Y' ? 1 : 2;
+      const cnt = parseInt(document.getElementById(`count-${dir}-${i}`).value);
+      C.push([rowSets[dir][v].map(h => idx[h.join(',')]), col, cnt]);
+    });
+  });
+  return C;
+}
+
+// ─── SOLVER ───────────────────────────────────────────────
+function solvePuzzle() {
+  const C = readConstraints();
+  const st = new Uint8Array(N);
+
+  // Validate totals
+  let totals = [0,0,0];
+  [0,7,14].forEach((offset, di) => {
+    for(let i=offset; i<offset+7; i++){
+      const [ix,col,cnt] = C[i];
+      totals[di] += col===1 ? cnt : ix.length - cnt;
+    }
+  });
+  if(totals[0]!==totals[1] || totals[1]!==totals[2]) {
+    document.getElementById('status').innerHTML =
+      `<span class="failed">⚠️ Yellow totals don't match across directions (${totals.join(', ')}). Check your pin inputs!</span>`;
+    document.getElementById('solution').innerHTML = '';
+    return;
+  }
+
+  function check(){
+    for(const[ix,col,cnt]of C){let m=0,u=0,o=0;
+      for(const i of ix){if(st[i]===col)m++;else if(!st[i])u++;else o++;}
+      if(m>cnt||m+u<cnt)return false;const on=ix.length-cnt;if(o>on||o+u<on)return false;}
+    return true;}
+
+  function propagate(){
+    let ch=true;while(ch){ch=false;
+      for(const[ix,col,cnt]of C){let m=0;const ui=[];const oc=col===1?2:1;let o=0;
+        for(const i of ix){if(st[i]===col)m++;else if(!st[i])ui.push(i);else o++;}
+        const rem=cnt-m,on=ix.length-cnt-o;
+        if(rem<0||on<0||rem>ui.length||on>ui.length)return false;
+        if(rem===ui.length&&rem>0){for(const i of ui){st[i]=col;ch=true;}}
+        else if(rem===0&&ui.length>0){for(const i of ui){st[i]=oc;ch=true;}}
+        else if(on===ui.length&&on>0){for(const i of ui){st[i]=oc;ch=true;}}
+        else if(on===0&&ui.length>0){for(const i of ui){st[i]=col;ch=true;}}
+      }if(!check())return false;}return true;}
+
+  function solve(){
+    const saved=new Uint8Array(st);
+    if(!propagate()){st.set(saved);return false;}
+    const i=st.indexOf(0);if(i===-1)return check();
+    for(const c of[1,2]){st.set(saved);propagate();st[i]=c;if(check()&&solve())return true;}
+    st.set(saved);return false;}
+
+  const t0 = performance.now();
+  const ok = solve();
+  const ms = Math.round(performance.now()-t0);
+  const statusEl = document.getElementById('status');
+  const solEl = document.getElementById('solution');
+
+  if(ok) {
+    statusEl.innerHTML = `<span class="solved">✅ Solved in ${ms}ms!</span>`;
+    let html = '<h3 style="margin-bottom:12px">Solution — click hexes on the puzzle in this order:</h3>';
+    for(let r=-3;r<=3;r++){
+      const row = rR[r].slice().sort((a,b)=>a[0]-b[0]);
+      const indent = (7 - row.length) * 22;
+      html += `<div class="grid-row" style="padding-left:${indent}px">`;
+      row.forEach(h => {
+        const c = st[idx[h.join(',')]];
+        html += `<span class="hex-cell hex-${c===1?'Y':'B'}">${c===1?'Y':'B'}</span>`;
+      });
+      html += `<span class="row-label">Row ${r+4}</span></div>`;
+    }
+    solEl.innerHTML = html;
+  } else {
+    statusEl.innerHTML = '<span class="failed">❌ No solution found. Double-check pin colors and numbers!</span>';
+    solEl.innerHTML = '';
+  }
+}
+</script>
+</body>
+</html>
